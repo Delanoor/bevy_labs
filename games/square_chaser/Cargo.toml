@@ -5,7 +5,5 @@ edition = "2024"
 
 [dependencies]
 bevy = { workspace = true }
-serde = { workspace = true }
-ron = { workspace = true }
+rand = "0.9.2"
 core_engine = { path = "../../crates/core_engine" }
-ui_common = { path = "../../crates/ui_common" }
