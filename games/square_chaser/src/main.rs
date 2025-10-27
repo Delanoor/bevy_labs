@@ -1,26 +1,47 @@
+use bevy_common_assets::ron::RonAssetPlugin;
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use core_engine::prelude::*;
+
+mod config;
+use config::PlayerConfig;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(CorePlugin) // movement, lifetime, damage,
+        .add_plugins(RonAssetPlugin::<PlayerConfig>::new(&["player.ron"]))
+        .register_type::<PlayerConfig>() // for inspector later if you want
+        .add_plugins(EguiPlugin::default())
+        .add_plugins(WorldInspectorPlugin::new()) // live GUI
+        .register_type::<CircleCollider>() // ← so it shows in GUI
+        .register_type::<ColliderDebug>()
+        .insert_resource(ColliderDebug::default())
         .insert_resource(Score::default())
         .insert_resource(RoundTimer { time_left: 60.0 })
-        .add_systems(Startup, (setup_camera, spawn_player, spawn_ui))
+        .add_systems(Startup, (setup_camera, spawn_ui, load_player_cfg))
         .add_systems(
             Update,
             (
+                draw_colliders,
                 player_input,
                 clamp_bounds,
                 spawn_target_periodically,
                 collect_targets,
                 update_hud,
                 tick_round,
+                maybe_spawn_player,
+                react_to_player_cfg_changes,
             ),
         )
         .run();
 }
+#[derive(Resource)]
+struct PlayerCfgHandle(Handle<PlayerConfig>);
 
+fn load_player_cfg(mut commands: Commands, server: Res<AssetServer>) {
+    let h = server.load("config/player.ron");
+    commands.insert_resource(PlayerCfgHandle(h));
+}
 const ARENA_HALF_W: f32 = 480.0;
 const ARENA_HALF_H: f32 = 270.0;
 
@@ -49,7 +70,7 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         Player,
         Health::new(1.0),
         Velocity::default(),
-        CircleCollider::new(70.0),
+        CircleCollider::new(51.0),
         Sprite {
             image,
             custom_size: Some(Vec2::new(120., 70.0)),
@@ -77,30 +98,39 @@ pub fn spawn_ui(mut commands: Commands) {
     ));
 }
 
-fn player_input(kb: Res<ButtonInput<KeyCode>>, mut q: Query<&mut Velocity, With<Player>>) {
-    let mut dir = Vec2::ZERO;
+fn player_input(
+    kb: Res<ButtonInput<KeyCode>>,
+    cfg_h: Option<Res<PlayerCfgHandle>>,
+    cfgs: Res<Assets<PlayerConfig>>,
+    mut q: Query<&mut Velocity, With<Player>>,
+) {
+    if let Some(h) = cfg_h {
+        if let Some(cfg) = cfgs.get(&h.0) {
+            let mut dir = Vec2::ZERO;
 
-    // Up movement
-    if kb.pressed(KeyCode::KeyW) || kb.pressed(KeyCode::ArrowUp) {
-        dir.y += 1.0;
-    }
-    // Down movement
-    if kb.pressed(KeyCode::KeyS) || kb.pressed(KeyCode::ArrowDown) {
-        dir.y -= 1.0;
-    }
-    // Right movement
-    if kb.pressed(KeyCode::KeyD) || kb.pressed(KeyCode::ArrowRight) {
-        dir.x += 1.0;
-    }
-    // Left movement
-    if kb.pressed(KeyCode::KeyA) || kb.pressed(KeyCode::ArrowLeft) {
-        dir.x -= 1.0;
-    }
+            // Up movement
+            if kb.pressed(KeyCode::KeyW) || kb.pressed(KeyCode::ArrowUp) {
+                dir.y += 1.0;
+            }
+            // Down movement
+            if kb.pressed(KeyCode::KeyS) || kb.pressed(KeyCode::ArrowDown) {
+                dir.y -= 1.0;
+            }
+            // Right movement
+            if kb.pressed(KeyCode::KeyD) || kb.pressed(KeyCode::ArrowRight) {
+                dir.x += 1.0;
+            }
+            // Left movement
+            if kb.pressed(KeyCode::KeyA) || kb.pressed(KeyCode::ArrowLeft) {
+                dir.x -= 1.0;
+            }
 
-    // Apply movement to player
-    if let Ok(mut velocity) = q.single_mut() {
-        let speed = 260.0;
-        velocity.lin_vel = dir.normalize_or_zero() * speed
+            // Apply movement to player
+            if let Ok(mut velocity) = q.single_mut() {
+                let speed = 260.0;
+                velocity.lin_vel = dir.normalize_or_zero() * speed
+            }
+        }
     }
 }
 fn clamp_bounds(mut q: Query<&mut Transform, With<Player>>) {
@@ -176,5 +206,82 @@ fn tick_round(time: Res<Time>, mut round: ResMut<RoundTimer>) {
     if round.time_left <= 0.0 {
         round.time_left = 0.0;
         info!("Round over.") // TODO: state change
+    }
+}
+
+fn draw_colliders(
+    mut gizmos: Gizmos,
+    cfg: Res<ColliderDebug>,
+    q: Query<(&Transform, &CircleCollider)>,
+) {
+    if !cfg.enabled {
+        return;
+    }
+    for (t, c) in q.iter() {
+        let r = c.radius * cfg.radius_scale.max(0.01);
+        // bevy 0.17 gizmo circle in XY plane:
+        gizmos.circle_2d(
+            t.translation.truncate(),
+            r,
+            Color::linear_rgb(0.2, 1.0, 0.4),
+        );
+        // .(32) // optional smoothness
+        // .thickness(cfg.line_thickness.max(1.0));
+    }
+}
+
+fn maybe_spawn_player(
+    mut commands: Commands,
+    server: Res<AssetServer>,
+    cfg_h: Option<Res<PlayerCfgHandle>>,
+    cfgs: Res<Assets<PlayerConfig>>,
+    assets: Res<AssetServer>,
+    mut done: Local<bool>,
+) {
+    if *done {
+        return;
+    }
+    let Some(h) = cfg_h else {
+        return;
+    };
+    if !server.is_loaded_with_dependencies(h.0.id()) {
+        return;
+    }
+
+    if let Some(cfg) = cfgs.get(&h.0) {
+        let image = assets.load("cat.png");
+        commands.spawn((
+            Player,
+            Health::new(1.0),
+            Velocity::default(),
+            CircleCollider::new(cfg.collider_radius),
+            Sprite {
+                image,
+                custom_size: Some(Vec2::new(cfg.sprite_w, cfg.sprite_h)),
+                image_mode: SpriteImageMode::Scale(ScalingMode::FillCenter),
+                ..default()
+            },
+        ));
+        *done = true;
+    }
+}
+
+fn react_to_player_cfg_changes(
+    mut ev: MessageReader<AssetEvent<PlayerConfig>>,
+    cfgs: Res<Assets<PlayerConfig>>,
+    cfg_h: Option<Res<PlayerCfgHandle>>,
+    mut colliders: Query<&mut CircleCollider, With<Player>>,
+) {
+    let Some(h) = cfg_h else {
+        return;
+    };
+    for e in ev.read() {
+        if let AssetEvent::Modified { id } = e {
+            if *id == h.0.id() {
+                if let (Ok(mut c), Some(cfg)) = (colliders.single_mut(), cfgs.get(&h.0)) {
+                    c.radius = cfg.collider_radius; // live apply
+                }
+            }
+        }
     }
 }
