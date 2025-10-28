@@ -1,3 +1,4 @@
+use bevy::asset::AssetPlugin;
 use bevy_common_assets::ron::RonAssetPlugin;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use core_engine::prelude::*;
@@ -7,7 +8,11 @@ use config::PlayerConfig;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(AssetPlugin {
+            watch_for_changes_override: Some(true),
+            file_path: "assets".into(),
+            ..default()
+        }))
         .add_plugins(CorePlugin) // movement, lifetime, damage,
         .add_plugins(RonAssetPlugin::<PlayerConfig>::new(&["player.ron"]))
         .register_type::<PlayerConfig>() // for inspector later if you want
@@ -40,6 +45,8 @@ struct PlayerCfgHandle(Handle<PlayerConfig>);
 
 fn load_player_cfg(mut commands: Commands, server: Res<AssetServer>) {
     let h = server.load("config/player.ron");
+    println!("Loading player config from: config/player.ron");
+    println!("Asset handle: {:?}", h.id());
     commands.insert_resource(PlayerCfgHandle(h));
 }
 const ARENA_HALF_W: f32 = 480.0;
@@ -271,14 +278,32 @@ fn react_to_player_cfg_changes(
     cfgs: Res<Assets<PlayerConfig>>,
     cfg_h: Option<Res<PlayerCfgHandle>>,
     mut colliders: Query<&mut CircleCollider, With<Player>>,
+    kb: Res<ButtonInput<KeyCode>>,
+    server: Res<AssetServer>,
 ) {
     let Some(h) = cfg_h else {
+        println!("No config handle found!");
         return;
     };
-    for e in ev.read() {
+
+    // Manual reload with 'R' key since file watching doesn't work reliably
+    if kb.just_pressed(KeyCode::KeyR) {
+        println!("Manual reload triggered!");
+        server.reload("config/player.ron");
+    }
+
+    let events = ev.read();
+
+    for e in events {
+        println!("Asset event: {:?}", e);
         if let AssetEvent::Modified { id } = e {
+            println!("Asset modified: {:?}, looking for: {:?}", id, h.0.id());
             if *id == h.0.id() {
                 if let (Ok(mut c), Some(cfg)) = (colliders.single_mut(), cfgs.get(&h.0)) {
+                    println!(
+                        "Updating collider radius from {} to {}",
+                        c.radius, cfg.collider_radius
+                    );
                     c.radius = cfg.collider_radius; // live apply
                 }
             }

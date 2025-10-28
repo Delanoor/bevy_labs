@@ -1737,6 +1737,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bounce_engine"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "core_engine",
+ "rand",
+]
+
+[[package]]
 name = "bstr"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
