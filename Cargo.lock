@@ -4034,6 +4034,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pixel_dodge"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "core_engine",
+ "rand",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
