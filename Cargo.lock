@@ -4842,6 +4842,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tiny_tycoon"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "core_engine",
+ "ron 0.11.0",
+ "serde",
+]
+
+[[package]]
 name = "tinystr"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

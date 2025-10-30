@@ -151,4 +151,19 @@ fn spawn_hazards(
     }
 }
 
-fn end_if_collision() {}
+fn end_if_collision(
+    player: Query<(&Transform, &CircleCollider), With<Player>>,
+    hazards: Query<(&Transform, &CircleCollider), With<Hazard>>,
+) {
+    // not going to abbreviate, it's fucking confusing
+    if let Ok((player_transform, player_circle)) = player.single() {
+        let player_position = player_transform.translation.truncate(); // this discards z 
+        for (hazard_transform, hazard_circle) in hazards.iter() {
+            let d2 = player_position.distance_squared(hazard_transform.translation.truncate());
+            let r = player_circle.radius + hazard_circle.radius;
+            if d2 <= r * r {
+                info!("GAME OVER");
+            }
+        }
+    }
+}

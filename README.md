@@ -16,7 +16,7 @@ The goal: reach commercial-quality roguelite and meta-progression proficiency.
 | **1** | **Square Chaser** | ECS · Input · Timers | Move a square to collect targets before time runs out. |
 | **2** | **Bounce Engine** | Physics · Transform updates | Bouncing balls with velocity, friction, and edge collision. |
 | **3** | **Pixel Dodge** | Spawning · Collision detection | Dodge falling obstacles; difficulty scales dynamically. |
-| **4** | **Stoopid Clicker** | UI · Persistence | Idle clicker with upgrades and RON-based auto-save. |
+| **4** | **Tiny Tycoon** | UI · Persistence | A minimalist economic simulator where factories produce goods over time, profits scale with upgrades, and progress is auto-saved in RON. |
 | **5** | **Mini Slots** | Animation · Timing | Three-reel slot machine with easing-based spin animation. |
 | **6** | **Cat Invaders** | Projectiles · Combat loop | Shoot waves of enemies and manage damage systems. |
 | **7** | **Fish Factory Tycoon** | Resource loops · Timers | Build an idle production system with upgradable efficiency. |
