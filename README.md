@@ -59,5 +59,5 @@ Each project focuses on a key Bevy concept:
 cargo build --workspace
 
 # Run an individual game
-cargo run -p 01_square_chaser
+cargo run -p square_chaser
 ```
