@@ -1,0 +1,159 @@
+(
+    money: 494100.0,
+    inventory: [
+        ((1), 5146),
+    ],
+    factories: [
+        (
+            kind: Basic,
+            level: 6,
+            pos: (1.5296844, 1.2884353),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (0.67986864, 3.941799),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-3.029076, 5.1792564),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-7.5377784, 2.6799057),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-9.364567, -3.5078323),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-5.883132, -10.458908),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (2.6111746, -13.754336),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (12.409053, -10.100267),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (17.997456, 0.3026451),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (15.078045, 13.139732),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (3.374229, 21.7397),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-12.462919, 20.51038),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-24.640757, 8.296572),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-26.051933, -10.26142),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-14.266108, -26.390873),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (6.4961495, -31.333689),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (26.726381, -21.016672),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (35.979645, 1.2104092),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (28.224463, 25.443657),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (5.4694886, 39.624294),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-22.410538, 35.52137),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-41.929924, 13.337224),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-42.5101, -17.5753),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-22.112604, -42.603203),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (10.971998, -48.7813),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (41.410294, -31.451353),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (53.931313, 2.7228045),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (40.957607, 38.18998),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (6.963635, 57.58045),
+        ),
+        (
+            kind: Basic,
+            level: 1,
+            pos: (-32.863754, 50.199337),
+        ),
+    ],
+    last_real_secs: 45.014209376,
+)
