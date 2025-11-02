@@ -1,0 +1,8 @@
+[package]
+name = "rusty_slots"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true }
+core_engine = { path = "../../crates/core_engine" }
