@@ -81,8 +81,65 @@ fn spawn_reels(mut commands: Commands) {
     }
 }
 
-fn spin_button() {}
-fn drive_spinning() {}
+fn spin_button(
+    mut q_btn: Query<&Interaction, (Changed<Interaction>, With<BtnSpin>)>,
+    mut reels: Query<(&mut SpinTimer, &mut ReelOffset, &mut ReelSpeed, &Reel)>,
+    mut lock: ResMut<SpinLock>,
+    mut credits: ResMut<Credits>,
+    bet: Res<Bet>,
+) {
+    for interaction in &mut q_btn {
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
+        if lock.0 || credits.0 < bet.0 {
+            return;
+        }
+
+        // lock and pay bet
+        lock.0 = true;
+        credits.0 -= bet.0;
+
+        for (mut t, mut off, mut spd, _r) in &mut reels {
+            *off = ReelOffset(0.0);
+            t.0 = Some(Timer::from_seconds(3.0, TimerMode::Repeating)); // running 
+            // randomize speed later
+            spd.0 *= 1.0;
+        }
+    }
+}
+fn drive_spinning(
+    time: Res<Time>,
+    mut q: Query<(&mut SpinTimer, &mut ReelOffset, &Reel, Option<&Stopping>)>,
+) {
+    for (mut timer, mut off, reel, stopping) in &mut q {
+        // if easing to a stop, skip raw spin here
+        if stopping.is_some() {
+            continue;
+        }
+
+        if let Some(t) = timer.0.as_mut() {
+            t.tick(time.delta());
+
+            let rows_per_sec = 12.0;
+            off.0 = (off.0 + rows_per_sec * time.delta_secs()) % reel.rows as f32;
+        }
+    }
+}
 fn ease_to_stop() {}
 fn settle_and_payout() {}
-fn update_ui() {}
+fn update_ui(
+    credits: Res<Credits>,
+    bet: Res<Bet>,
+    mut queries: ParamSet<(
+        Query<&mut Text, With<UiCredits>>,
+        Query<&mut Text, With<UiBet>>,
+    )>,
+) {
+    if let Ok(mut t) = queries.p0().single_mut() {
+        t.0 = format!("Credits: {}", credits.0);
+    }
+    if let Ok(mut t) = queries.p1().single_mut() {
+        t.0 = format!("Bet: {}", bet.0);
+    }
+}
