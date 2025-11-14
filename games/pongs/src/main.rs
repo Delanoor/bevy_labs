@@ -1,9 +1,9 @@
-use bevy::{prelude::*, sprite_render::Material2d};
+use bevy::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_systems(Startup, (spawn_camera, spawn_ball))
+        .add_systems(Startup, (spawn_camera, spawn_ball, spawn_paddles))
         .add_systems(
             Update,
             (move_ball.before(project_positions), project_positions),
@@ -50,4 +50,27 @@ fn move_ball(mut position: Single<&mut Position, With<Ball>>) {
     //     position.0.x += 1.0
     // }
     position.0.x += 1.0;
+}
+
+#[derive(Component)]
+#[require(Position)]
+struct Paddle;
+
+const PADDLE_SHAPE: Rectangle = Rectangle::new(20., 50.);
+const PADDLE_COLOR: Color = Color::srgb(0., 1., 0.);
+
+fn spawn_paddles(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let mesh = meshes.add(PADDLE_SHAPE);
+    let material = materials.add(PADDLE_COLOR);
+
+    commands.spawn((
+        Paddle,
+        Mesh2d(mesh),
+        MeshMaterial2d(material),
+        Position(Vec2::new(250., 0.)),
+    ));
 }
