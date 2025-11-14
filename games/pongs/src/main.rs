@@ -5,18 +5,22 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, (spawn_camera, spawn_ball, spawn_paddles))
         .add_systems(
-            Update,
+            FixedUpdate,
             (move_ball.before(project_positions), project_positions),
         )
         .run();
 }
+
+const BALL_SPEED: f32 = 2.;
+#[derive(Component, Default)]
+struct Velocity(Vec2);
 
 #[derive(Component, Default)]
 #[require(Transform)]
 struct Position(Vec2); // to represent logical postion
 
 #[derive(Component)] // marker component
-#[require(Position)]
+#[require(Position, Velocity = Velocity(Vec2::new(-BALL_SPEED, BALL_SPEED)))]
 struct Ball;
 
 const BALL_SIZE: f32 = 30.0;
@@ -45,11 +49,10 @@ fn project_positions(mut positionables: Query<(&mut Transform, &Position)>) {
     }
 }
 
-fn move_ball(mut position: Single<&mut Position, With<Ball>>) {
-    // if let Ok(mut position) = ball.single_mut() {
-    //     position.0.x += 1.0
-    // }
-    position.0.x += 1.0;
+fn move_ball(ball: Single<(&mut Position, &Velocity), With<Ball>>) {
+    let (mut position, velocity) = ball.into_inner();
+
+    position.0 += velocity.0 * BALL_SPEED;
 }
 
 #[derive(Component)]
