@@ -4,19 +4,24 @@ use bevy::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_systems(Startup, (spawn_camera, spawn_ball, spawn_paddles))
+        .add_systems(
+            Startup,
+            (spawn_camera, spawn_ball, spawn_paddles, spawn_gutters),
+        )
         .add_systems(
             FixedUpdate,
             (
-                move_ball.before(project_positions),
                 project_positions,
+                move_ball.before(project_positions),
                 handle_collisions.after(move_ball),
+                move_paddles.before(project_positions),
+                handle_player_input.before(move_paddles),
             ),
         )
         .run();
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 struct Collider(Rectangle);
 
 const BALL_SPEED: f32 = 2.;
@@ -101,6 +106,7 @@ fn spawn_paddles(
         Mesh2d(mesh.clone()),
         MeshMaterial2d(material),
         Position(player_position),
+        Velocity(Vec2::ZERO),
     ));
 
     // ===================== AI =====================
@@ -111,6 +117,7 @@ fn spawn_paddles(
         Mesh2d(mesh.clone()),
         MeshMaterial2d(material_ai),
         Position(ai_position),
+        Velocity(Vec2::ZERO),
     ));
 }
 
@@ -177,5 +184,69 @@ fn handle_collisions(
                 }
             }
         }
+    }
+}
+
+// ===================== Gutter =====================
+
+#[derive(Component)]
+#[require(Position, Collider)]
+struct Gutter;
+
+const GUTTER_COLOR: Color = Color::srgb(0., 0., 1.);
+const GUTTER_HEIGHT: f32 = 20.;
+
+fn spawn_gutters(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    window: Single<&Window>,
+) {
+    let material = materials.add(GUTTER_COLOR);
+    let padding = 20.;
+
+    let gutter_shape = Rectangle::new(window.resolution.width(), GUTTER_HEIGHT);
+    let mesh = meshes.add(gutter_shape);
+
+    let top_gutter_position = Vec2::new(0., window.resolution.height() / 2. - padding);
+
+    commands.spawn((
+        Gutter,
+        Mesh2d(mesh.clone()),
+        MeshMaterial2d(material.clone()),
+        Position(top_gutter_position),
+        Collider(gutter_shape),
+    ));
+
+    let bottom_gutter_position = Vec2::new(0., -window.resolution.height() / 2. + padding);
+    commands.spawn((
+        Gutter,
+        Mesh2d(mesh.clone()),
+        MeshMaterial2d(material.clone()),
+        Position(bottom_gutter_position),
+        Collider(gutter_shape),
+    ));
+}
+
+// ===================== Movement =====================
+
+const PADDLE_SPEED: f32 = 5.;
+
+fn handle_player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut paddle_velocity: Single<&mut Velocity, With<Player>>,
+) {
+    if keyboard_input.pressed(KeyCode::ArrowUp) {
+        paddle_velocity.0.y = PADDLE_SPEED;
+    } else if keyboard_input.pressed(KeyCode::ArrowDown) {
+        paddle_velocity.0.y = -PADDLE_SPEED;
+    } else {
+        paddle_velocity.0.y = 0.;
+    }
+}
+
+fn move_paddles(mut paddles: Query<(&mut Position, &Velocity), With<Paddle>>) {
+    for (mut pos, vel) in &mut paddles {
+        pos.0 += vel.0;
     }
 }
