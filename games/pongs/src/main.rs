@@ -7,7 +7,13 @@ fn main() {
         .insert_resource(Score { player: 0, ai: 0 })
         .add_systems(
             Startup,
-            (spawn_camera, spawn_ball, spawn_paddles, spawn_gutters),
+            (
+                spawn_camera,
+                spawn_ball,
+                spawn_paddles,
+                spawn_gutters,
+                spawn_scoreboard,
+            ),
         )
         .add_systems(
             FixedUpdate,
@@ -19,6 +25,8 @@ fn main() {
                 handle_player_input.before(move_paddles),
                 constrain_paddle_position.after(move_paddles),
                 detect_goal.after(move_ball),
+                update_scoreboard,
+                move_ai,
             ),
         )
         .add_observer(reset_ball)
@@ -176,16 +184,16 @@ fn handle_collisions(
         ) {
             match collision {
                 Collision::Left => {
-                    ball_velocity.0.x *= -1.;
+                    ball_velocity.0.x *= -1.1;
                 }
                 Collision::Right => {
-                    ball_velocity.0.x *= -1.;
+                    ball_velocity.0.x *= -1.1;
                 }
                 Collision::Top => {
-                    ball_velocity.0.y *= -1.;
+                    ball_velocity.0.y *= -1.1;
                 }
                 Collision::Bottom => {
-                    ball_velocity.0.y *= -1.;
+                    ball_velocity.0.y *= -1.1;
                 }
             }
         }
@@ -235,7 +243,7 @@ fn spawn_gutters(
 
 // ===================== Movement =====================
 
-const PADDLE_SPEED: f32 = 5.;
+const PADDLE_SPEED: f32 = 9.;
 
 fn handle_player_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -339,4 +347,79 @@ fn update_score(
         score.player += 1;
         info!("Player scored: {} - {}", score.player, score.ai);
     }
+}
+
+#[derive(Component)]
+struct PlayerScore;
+
+#[derive(Component)]
+struct AiScore;
+
+fn spawn_scoreboard(mut commands: Commands) {
+    let container = Node {
+        width: percent(100.0),
+        height: percent(100.0),
+        justify_content: JustifyContent::Center,
+        ..default()
+    };
+
+    // Then add a container for the text
+    let header = Node {
+        width: px(200.),
+        height: px(100.),
+        ..default()
+    };
+
+    // The players score on the left hand side
+    let player_score = (
+        PlayerScore,
+        Text::new("0"),
+        TextFont::from_font_size(72.0),
+        TextColor(Color::WHITE),
+        TextLayout::new_with_justify(Justify::Center),
+        Node {
+            position_type: PositionType::Absolute,
+            top: px(5.0),
+            left: px(25.0),
+            ..default()
+        },
+    );
+
+    // The AI score on the right hand side
+    let ai_score = (
+        AiScore,
+        Text::new("0"),
+        TextFont::from_font_size(72.0),
+        TextColor(Color::WHITE),
+        TextLayout::new_with_justify(Justify::Center),
+        Node {
+            position_type: PositionType::Absolute,
+            top: px(5.0),
+            right: px(25.0),
+            ..default()
+        },
+    );
+
+    commands.spawn((
+        container,
+        children![(header, children![player_score, ai_score])],
+    ));
+}
+
+fn update_scoreboard(
+    mut player_score: Single<&mut Text, (With<PlayerScore>, Without<AiScore>)>,
+    mut ai_score: Single<&mut Text, (With<AiScore>, Without<PlayerScore>)>,
+    score: Res<Score>,
+) {
+    if score.is_changed() {
+        player_score.0 = score.player.to_string();
+        ai_score.0 = score.ai.to_string();
+    }
+}
+
+fn move_ai(ai: Single<(&mut Velocity, &Position), With<Ai>>, ball: Single<&Position, With<Ball>>) {
+    let (mut velocity, position) = ai.into_inner();
+    let a_to_b = ball.0 - position.0;
+
+    velocity.0.y = a_to_b.y.signum() * PADDLE_SPEED;
 }
